@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Settings as SettingsIcon, Key, Zap, CheckCircle, Circle, ExternalLink, ChevronDown, ChevronUp, Terminal, Database } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Settings as SettingsIcon, Key, Zap, CheckCircle, Circle, ExternalLink, ChevronDown, ChevronUp, Terminal, Database, Upload } from 'lucide-react';
+import type { ColmexImportResult } from '../utils/colmexImport';
 
 const card: React.CSSProperties = {
   backgroundColor: '#1e293b',
@@ -119,12 +120,39 @@ function StatusDot({ active }: { active: boolean }) {
     : <Circle size={16} color="#475569" style={{ flexShrink: 0 }} />;
 }
 
-export default function Settings() {
+interface SettingsProps {
+  onImportColmex?: (csvText: string) => ColmexImportResult;
+}
+
+export default function Settings({ onImportColmex }: SettingsProps) {
   const [ibkrOpen, setIbkrOpen] = useState(true);
   const [finnhubOpen, setFinnhubOpen] = useState(true);
   const [secretsOpen, setSecretsOpen] = useState(true);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ColmexImportResult | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+
   const finnhubKey = typeof window !== 'undefined' ? localStorage.getItem('finnhub_api_key') : null;
+
+  async function handleColmexFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file
+    if (!file || !onImportColmex) return;
+    setImporting(true);
+    setImportError(null);
+    setImportResult(null);
+    try {
+      const text = await file.text();
+      const result = onImportColmex(text);
+      setImportResult(result);
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'שגיאה בקריאת הקובץ.');
+    } finally {
+      setImporting(false);
+    }
+  }
 
   function toggleSection(setter: React.Dispatch<React.SetStateAction<boolean>>) {
     setter(v => !v);
@@ -172,11 +200,73 @@ export default function Settings() {
           <SettingsIcon size={22} color="white" />
         </div>
         <div>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: '#f1f5f9' }}>הגדרות חיבורים</h1>
+          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: '#f1f5f9' }}>הגדרות וייבוא</h1>
           <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
-            מדריך הגדרת IBKR FlexQuery ו-Finnhub לעדכון אוטומטי של היומן
+            ייבוא עסקאות מקולמקס פרו, ועדכון מחירים עם Finnhub
           </p>
         </div>
+      </div>
+
+      {/* Colmex Pro import */}
+      <div style={{ ...card, border: '1px solid rgba(14,165,233,0.35)', background: 'linear-gradient(180deg, rgba(14,165,233,0.06), #1e293b)' }}>
+        <div style={sectionTitle}>
+          <Upload size={20} color="#38bdf8" />
+          ייבוא עסקאות מקולמקס פרו
+        </div>
+        <p style={{ fontSize: '13px', color: '#94a3b8', margin: '4px 0 16px', lineHeight: 1.7 }}>
+          ייצא מקולמקס פרו את <strong style={{ color: '#cbd5e1' }}>היסטוריית המסחר</strong> כקובץ <strong style={{ color: '#cbd5e1' }}>CSV</strong>,
+          והעלה אותו כאן. המערכת מקבצת את הביצועים לעסקאות וממזגת אותן ליומן.
+          אפשר להעלות ייצוא מלא שוב ושוב — עסקאות קיימות לא ישוכפלו, ועסקאות שנסגרו יתעדכנו.
+        </p>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          onChange={handleColmexFile}
+          style={{ display: 'none' }}
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={importing}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '10px',
+            background: importing ? '#334155' : 'linear-gradient(135deg, #0ea5e9, #0369a1)',
+            color: 'white', border: 'none', borderRadius: '8px',
+            padding: '11px 20px', fontSize: '14px', fontWeight: 600,
+            cursor: importing ? 'default' : 'pointer',
+          }}
+        >
+          <Upload size={16} />
+          {importing ? 'מייבא…' : 'בחר קובץ CSV מקולמקס'}
+        </button>
+
+        {importResult && (
+          <div style={{
+            marginTop: '16px', padding: '14px 16px', borderRadius: '8px',
+            backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
+            fontSize: '13px', color: '#86efac', lineHeight: 1.8,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#22c55e' }}>
+              <CheckCircle size={16} /> הייבוא הושלם
+            </div>
+            <div style={{ color: '#cbd5e1', marginTop: '6px' }}>
+              נקראו {importResult.parsedExecutions} ביצועים → {importResult.positions} עסקאות.{' '}
+              <strong style={{ color: '#86efac' }}>{importResult.newCount} חדשות</strong>,{' '}
+              <strong style={{ color: '#7dd3fc' }}>{importResult.updatedCount} עודכנו</strong>.
+              {importResult.newCount === 0 && importResult.updatedCount === 0 && ' היומן כבר היה מעודכן.'}
+            </div>
+          </div>
+        )}
+        {importError && (
+          <div style={{
+            marginTop: '16px', padding: '14px 16px', borderRadius: '8px',
+            backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+            fontSize: '13px', color: '#fca5a5', lineHeight: 1.7,
+          }}>
+            {importError}
+          </div>
+        )}
       </div>
 
       {/* Status Overview */}

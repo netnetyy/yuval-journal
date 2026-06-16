@@ -10,6 +10,7 @@ import LongTermInvestments from './components/LongTermInvestments';
 import Settings from './components/Settings';
 import type { AppData, Trade, PortfolioDeposit } from './types/trade';
 import { loadData, saveData, generateId } from './utils/storage';
+import { importColmexCsv, type ColmexImportResult } from './utils/colmexImport';
 
 type Page = 'dashboard' | 'trades' | 'add-trade' | 'statistics' | 'edit-trade' | 'trade-detail' | 'longterm' | 'settings';
 
@@ -75,6 +76,14 @@ function App() {
 
   const handleSetDefaultCommission = (value: number) => {
     persist((prev) => ({ ...prev, defaultCommissionPerAction: value }));
+  };
+
+  const handleImportColmex = (csvText: string): ColmexImportResult => {
+    if (!data) throw new Error('היומן עדיין נטען, נסה שוב בעוד רגע.');
+    const result = importColmexCsv(data, csvText);
+    setData(result.data);
+    saveData(result.data); // fire-and-forget cloud/local persist
+    return result;
   };
 
   const handleDeleteDeposit = (id: string) => {
@@ -161,7 +170,7 @@ function App() {
       case 'longterm':
         return <LongTermInvestments />;
       case 'settings':
-        return <Settings />;
+        return <Settings onImportColmex={handleImportColmex} />;
       default:
         return (
           <Dashboard
