@@ -183,6 +183,7 @@ function mapPositionToTrade(pos: PositionState, serialNumber: number): Trade {
     quantity: pos.entries[0].quantity,
     totalAmount: pos.entries[0].price * pos.entries[0].quantity,
     date: pos.entries[0].dateISO,
+    commission: Math.round(pos.entries[0].commission * 100) / 100,
   };
 
   // Display caps (model supports 3 reinforcements + 4 exits); totals below use ALL legs.
@@ -191,6 +192,7 @@ function mapPositionToTrade(pos: PositionState, serialNumber: number): Trade {
     quantity: e.quantity,
     totalAmount: e.price * e.quantity,
     date: e.dateISO,
+    commission: Math.round(e.commission * 100) / 100,
   }));
 
   const exitPL = (e: Execution) => {
@@ -211,6 +213,7 @@ function mapPositionToTrade(pos: PositionState, serialNumber: number): Trade {
       profitLossPercent: costBasis > 0 ? Math.round((pl / costBasis) * 10000) / 100 : 0,
       notes: '',
       date: e.dateISO,
+      commission: Math.round(e.commission * 100) / 100,
     };
   });
 
@@ -262,36 +265,35 @@ function mergeIntoAppData(appData: AppData, importedTrades: Trade[]): { data: Ap
       it.serialNumber = maxSerial + 1;
       trades.push(it);
       newCount++;
-    } else if (trades[existingIdx].status === 'open' && it.status === 'closed') {
-      trades[existingIdx] = {
-        ...trades[existingIdx],
-        exits: it.exits,
-        totalProfitLoss: it.totalProfitLoss,
-        totalProfitLossPercent: it.totalProfitLossPercent,
-        commissions: it.commissions,
-        status: 'closed',
-      };
-      updatedCount++;
-    } else if (trades[existingIdx].status === 'open' && it.status === 'open') {
-      const prevExits = (trades[existingIdx].exits || []).length;
-      const newExits = (it.exits || []).length;
-      const sharesChanged = trades[existingIdx].totalShares !== it.totalShares;
-      if (newExits !== prevExits || sharesChanged) {
-        trades[existingIdx] = {
-          ...trades[existingIdx],
-          exits: it.exits,
-          totalShares: it.totalShares,
-          avgEntryPrice: it.avgEntryPrice,
-          totalInvested: it.totalInvested,
-          totalProfitLoss: it.totalProfitLoss,
-          totalProfitLossPercent: it.totalProfitLossPercent,
-          commissions: it.commissions,
-          reinforcements: it.reinforcements,
-        };
-        updatedCount++;
-      }
+      continue;
     }
-    // else: already closed → skip (preserve manual edits)
+
+    const existing = trades[existingIdx];
+    // Only ever touch broker-imported trades; manually-created trades stay as-is.
+    if (existing.ibkrImported !== true) continue;
+
+    // Refresh the broker/numeric fields (incl. per-leg commission) from the fresh
+    // import; preserve the user's manual annotations and bookkeeping.
+    const refreshed: Trade = {
+      ...existing,
+      type: it.type,
+      date: it.date,
+      initialEntry: it.initialEntry,
+      reinforcements: it.reinforcements,
+      exits: it.exits,
+      totalShares: it.totalShares,
+      avgEntryPrice: it.avgEntryPrice,
+      totalInvested: it.totalInvested,
+      totalProfitLoss: it.totalProfitLoss,
+      totalProfitLossPercent: it.totalProfitLossPercent,
+      commissions: it.commissions,
+      status: it.status,
+    };
+
+    if (JSON.stringify(refreshed) !== JSON.stringify(existing)) {
+      trades[existingIdx] = refreshed;
+      updatedCount++;
+    }
   }
 
   return { data: { ...appData, trades }, newCount, updatedCount };

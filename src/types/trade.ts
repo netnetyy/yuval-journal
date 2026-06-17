@@ -6,6 +6,7 @@ export interface TradeEntry {
   totalAmount: number;
   risk?: number;
   date?: string; // optional date for reinforcements
+  commission?: number; // per-action commission (from broker import or manual)
 }
 
 export interface TradeExit {
@@ -16,6 +17,7 @@ export interface TradeExit {
   profitLossPercent: number;
   notes: string;
   date?: string; // optional exit date
+  commission?: number; // per-action commission (from broker import or manual)
 }
 
 export interface Trade {

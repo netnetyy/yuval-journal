@@ -76,12 +76,12 @@ const sectionTitle: React.CSSProperties = {
   marginTop: 0,
 };
 
-function emptyEntry(): TradeEntry {
-  return { price: 0, quantity: 0, totalAmount: 0 };
+function emptyEntry(commission = 0): TradeEntry {
+  return { price: 0, quantity: 0, totalAmount: 0, commission };
 }
 
-function emptyExit(): TradeExit {
-  return { price: 0, quantity: 0, totalAmount: 0, profitLoss: 0, profitLossPercent: 0, notes: '' };
+function emptyExit(commission = 0): TradeExit {
+  return { price: 0, quantity: 0, totalAmount: 0, profitLoss: 0, profitLossPercent: 0, notes: '', commission };
 }
 
 export default function TradeForm({ existing, nextSerial, defaultCommissionPerAction, onSave, onCancel }: TradeFormProps) {
@@ -96,26 +96,27 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
   const [showReinforcements, setShowReinforcements] = useState(
     (existing?.reinforcements?.length ?? 0) > 0
   );
-  const [commissionsManual, setCommissionsManual] = useState(false);
-  const [commissions, setCommissions] = useState(existing?.commissions ?? defaultCommissionPerAction * 2);
-
   const [initialEntry, setInitialEntry] = useState<TradeEntry>(
-    existing?.initialEntry ?? { price: 0, quantity: 0, sl: 0, tp: 0, totalAmount: 0, risk: 0 }
+    existing?.initialEntry
+      ? { ...existing.initialEntry, commission: existing.initialEntry.commission ?? defaultCommissionPerAction }
+      : { price: 0, quantity: 0, sl: 0, tp: 0, totalAmount: 0, risk: 0, commission: defaultCommissionPerAction }
   );
   const [reinforcements, setReinforcements] = useState<TradeEntry[]>(
-    existing?.reinforcements ?? []
+    (existing?.reinforcements ?? []).map((r) => ({ ...r, commission: r.commission ?? defaultCommissionPerAction }))
   );
   const [exits, setExits] = useState<TradeExit[]>(
-    existing?.exits?.length ? existing.exits : [emptyExit()]
+    existing?.exits?.length
+      ? existing.exits.map((e) => ({ ...e, commission: e.commission ?? defaultCommissionPerAction }))
+      : [emptyExit(defaultCommissionPerAction)]
   );
 
-  // Auto-calc commissions: 1 entry + reinforcements + exits
-  useEffect(() => {
-    if (!commissionsManual) {
-      const legs = 1 + reinforcements.length + exits.filter(e => e.price > 0 && e.quantity > 0).length;
-      setCommissions(Math.round(legs * defaultCommissionPerAction * 100) / 100);
-    }
-  }, [reinforcements.length, exits, commissionsManual, defaultCommissionPerAction]);
+  // Total commissions are derived from the per-action commissions (accurate, no override).
+  const commissions =
+    Math.round(
+      ((initialEntry.commission ?? 0) +
+        reinforcements.reduce((s, r) => s + (r.commission ?? 0), 0) +
+        exits.filter((e) => e.price > 0 && e.quantity > 0).reduce((s, e) => s + (e.commission ?? 0), 0)) * 100
+    ) / 100;
 
   // Live calculations
   const avgEntry = calculateAvgEntryPrice(initialEntry, reinforcements);
@@ -308,18 +309,13 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
             />
           </div>
           <div>
-            <label style={labelStyle}>עמלות ($)</label>
-            <input
-              type="number"
-              value={commissions || ''}
-              onChange={(e) => {
-                setCommissionsManual(true);
-                setCommissions(parseFloat(e.target.value) || 0);
-              }}
-              placeholder="5.00"
-              style={inputStyle}
-              step="0.01"
-            />
+            <label style={labelStyle}>סה"כ עמלות ($)</label>
+            <div
+              style={{ ...inputStyle, backgroundColor: '#162032', color: '#f59e0b', cursor: 'default', fontWeight: 600 }}
+              title="סכום אוטומטי של העמלות לכל פעולה"
+            >
+              {formatCurrency(commissions)}
+            </div>
           </div>
         </div>
       </div>
@@ -327,7 +323,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
       {/* Section 2: Initial Entry */}
       <div style={sectionStyle}>
         <h2 style={sectionTitle}>כניסה ראשונית</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
           <div>
             <label style={labelStyle}>מחיר כניסה</label>
             <input
@@ -380,6 +376,19 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
             />
           </div>
           <div>
+            <label style={labelStyle}>עמלה ($)</label>
+            <input
+              type="number"
+              value={initialEntry.commission ?? ''}
+              onChange={(e) =>
+                setInitialEntry((p) => ({ ...p, commission: parseFloat(e.target.value) || 0 }))
+              }
+              placeholder="0.00"
+              style={inputStyle}
+              step="0.01"
+            />
+          </div>
+          <div>
             <label style={labelStyle}>סה"כ</label>
             <div
               style={{
@@ -425,7 +434,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
         {showReinforcements && (
           <>
             {reinforcements.map((r, idx) => (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: '12px', marginBottom: '12px', alignItems: 'end' }}>
+              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto', gap: '12px', marginBottom: '12px', alignItems: 'end' }}>
                 <div>
                   <label style={labelStyle}>מחיר חיזוק {idx + 1}</label>
                   <input
@@ -461,6 +470,17 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
                   />
                 </div>
                 <div>
+                  <label style={labelStyle}>עמלה ($)</label>
+                  <input
+                    type="number"
+                    value={r.commission ?? ''}
+                    onChange={(e) => updateReinforcement(idx, 'commission', parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                    style={inputStyle}
+                    step="0.01"
+                  />
+                </div>
+                <div>
                   <label style={labelStyle}>סה"כ</label>
                   <div style={{ ...inputStyle, backgroundColor: '#162032', color: '#94a3b8', cursor: 'default' }}>
                     {formatCurrency(r.price * r.quantity)}
@@ -485,7 +505,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
             ))}
             {reinforcements.length < 3 && (
               <button
-                onClick={() => setReinforcements((prev) => [...prev, emptyEntry()])}
+                onClick={() => setReinforcements((prev) => [...prev, emptyEntry(defaultCommissionPerAction)])}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -539,7 +559,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
                 </button>
               )}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
               <div>
                 <label style={labelStyle}>מחיר יציאה</label>
                 <input
@@ -571,6 +591,17 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
                 />
               </div>
               <div>
+                <label style={labelStyle}>עמלה ($)</label>
+                <input
+                  type="number"
+                  value={ex.commission ?? ''}
+                  onChange={(e) => updateExit(idx, 'commission', parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                  style={inputStyle}
+                  step="0.01"
+                />
+              </div>
+              <div>
                 <label style={labelStyle}>רווח/הפסד</label>
                 <div
                   style={{
@@ -599,7 +630,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
         ))}
         {exits.length < 4 && (
           <button
-            onClick={() => setExits((prev) => [...prev, emptyExit()])}
+            onClick={() => setExits((prev) => [...prev, emptyExit(defaultCommissionPerAction)])}
             style={{
               display: 'flex',
               alignItems: 'center',

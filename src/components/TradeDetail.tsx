@@ -138,6 +138,7 @@ export default function TradeDetail({ trade, riskUnitValue, onBack, onEdit }: Tr
             <div><div style={labelStyle}>מחיר</div><div style={valueStyle}>{formatCurrency(trade.initialEntry.price)}</div></div>
             <div><div style={labelStyle}>כמות</div><div style={valueStyle}>{trade.initialEntry.quantity.toLocaleString()}</div></div>
             <div><div style={labelStyle}>סה"כ</div><div style={valueStyle}>{formatCurrency(trade.initialEntry.totalAmount)}</div></div>
+            {trade.initialEntry.commission != null ? <div><div style={labelStyle}>עמלה</div><div style={{ ...valueStyle, color: '#f59e0b' }}>{formatCurrency(trade.initialEntry.commission)}</div></div> : null}
             {trade.initialEntry.sl ? <div><div style={labelStyle}>Stop Loss</div><div style={{ ...valueStyle, color: '#ef4444' }}>{formatCurrency(trade.initialEntry.sl)}</div></div> : null}
             {trade.initialEntry.tp ? <div><div style={labelStyle}>Take Profit</div><div style={{ ...valueStyle, color: '#22c55e' }}>{formatCurrency(trade.initialEntry.tp)}</div></div> : null}
             {trade.initialEntry.risk ? <div><div style={labelStyle}>סיכון</div><div style={{ ...valueStyle, color: '#f59e0b' }}>{formatCurrency(trade.initialEntry.risk)}</div></div> : null}
@@ -159,6 +160,7 @@ export default function TradeDetail({ trade, riskUnitValue, onBack, onEdit }: Tr
                   <div><div style={labelStyle}>מחיר</div><div style={valueStyle}>{formatCurrency(r.price)}</div></div>
                   <div><div style={labelStyle}>כמות</div><div style={valueStyle}>{r.quantity.toLocaleString()}</div></div>
                   <div><div style={labelStyle}>סה"כ</div><div style={valueStyle}>{formatCurrency(r.totalAmount)}</div></div>
+                  {r.commission != null && <div><div style={labelStyle}>עמלה</div><div style={{ ...valueStyle, color: '#f59e0b' }}>{formatCurrency(r.commission)}</div></div>}
                   {r.date && <div><div style={labelStyle}>תאריך</div><div style={valueStyle}>{formatDate(r.date)}</div></div>}
                 </div>
               </div>
@@ -193,6 +195,7 @@ export default function TradeDetail({ trade, riskUnitValue, onBack, onEdit }: Tr
                     <div><div style={labelStyle}>סה"כ</div><div style={valueStyle}>{formatCurrency(ex.totalAmount)}</div></div>
                     <div><div style={labelStyle}>רווח/הפסד</div><div style={{ ...valueStyle, color: exProfit ? '#22c55e' : '#ef4444', fontSize: '16px' }}>{formatCurrency(ex.profitLoss)}</div></div>
                     <div><div style={labelStyle}>%</div><div style={{ ...valueStyle, color: exProfit ? '#22c55e' : '#ef4444' }}>{formatPercent(ex.profitLossPercent)}</div></div>
+                    {ex.commission != null && <div><div style={labelStyle}>עמלה</div><div style={{ ...valueStyle, color: '#f59e0b' }}>{formatCurrency(ex.commission)}</div></div>}
                     {ex.date && <div><div style={labelStyle}>תאריך</div><div style={valueStyle}>{formatDate(ex.date)}</div></div>}
                     {ex.notes && <div style={{ flex: 1, minWidth: '140px' }}><div style={labelStyle}>הערות</div><div style={{ ...valueStyle, color: '#94a3b8', fontWeight: 400, fontSize: '13px' }}>{ex.notes}</div></div>}
                   </div>
