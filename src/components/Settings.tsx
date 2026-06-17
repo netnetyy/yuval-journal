@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Settings as SettingsIcon, Key, Zap, CheckCircle, Circle, ExternalLink, ChevronDown, ChevronUp, Terminal, Database, Upload } from 'lucide-react';
+import { Settings as SettingsIcon, Zap, CheckCircle, Circle, ExternalLink, ChevronDown, ChevronUp, Database, Upload } from 'lucide-react';
 import type { ColmexImportResult } from '../utils/colmexImport';
 
 const card: React.CSSProperties = {
@@ -31,21 +31,6 @@ const badge = (color: string): React.CSSProperties => ({
   border: `1px solid ${color === 'blue' ? 'rgba(14,165,233,0.3)' : 'rgba(148,163,184,0.2)'}`,
   marginRight: '8px',
 });
-
-const codeBlock: React.CSSProperties = {
-  backgroundColor: '#0f172a',
-  border: '1px solid rgba(71,85,105,0.4)',
-  borderRadius: '8px',
-  padding: '14px 16px',
-  fontFamily: 'monospace',
-  fontSize: '13px',
-  color: '#94a3b8',
-  marginTop: '10px',
-  direction: 'ltr',
-  textAlign: 'left',
-  lineHeight: 1.6,
-  overflowX: 'auto',
-};
 
 const stepRow: React.CSSProperties = {
   display: 'flex',
@@ -83,24 +68,6 @@ const pathArrow: React.CSSProperties = {
   margin: '2px 4px',
 };
 
-const secretBox: React.CSSProperties = {
-  backgroundColor: '#0f172a',
-  border: '1px solid rgba(71,85,105,0.3)',
-  borderRadius: '8px',
-  padding: '12px 16px',
-  marginTop: '10px',
-  display: 'grid',
-  gap: '10px',
-};
-
-const secretRow: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: '220px 1fr',
-  gap: '12px',
-  alignItems: 'center',
-  fontSize: '13px',
-};
-
 function NavPath({ steps }: { steps: string[] }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px', margin: '8px 0' }}>
@@ -125,9 +92,7 @@ interface SettingsProps {
 }
 
 export default function Settings({ onImportColmex }: SettingsProps) {
-  const [ibkrOpen, setIbkrOpen] = useState(true);
   const [finnhubOpen, setFinnhubOpen] = useState(true);
-  const [secretsOpen, setSecretsOpen] = useState(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
@@ -270,196 +235,14 @@ export default function Settings({ onImportColmex }: SettingsProps) {
       </div>
 
       {/* Status Overview */}
-      <div style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '28px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <StatusDot active={false} />
-          <div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#cbd5e1' }}>IBKR FlexQuery</div>
-            <div style={{ fontSize: '11px', color: '#475569' }}>מוגדר ב-GitHub Secrets</div>
+      <div style={{ ...card, display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px' }}>
+        <StatusDot active={!!finnhubKey} />
+        <div>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: '#cbd5e1' }}>Finnhub API</div>
+          <div style={{ fontSize: '11px', color: finnhubKey ? '#22c55e' : '#475569' }}>
+            {finnhubKey ? 'מפתח מוגדר' : 'לא מוגדר עדיין'}
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <StatusDot active={!!finnhubKey} />
-          <div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#cbd5e1' }}>Finnhub API</div>
-            <div style={{ fontSize: '11px', color: finnhubKey ? '#22c55e' : '#475569' }}>
-              {finnhubKey ? 'מפתח מוגדר' : 'לא מוגדר עדיין'}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── IBKR Section ─── */}
-      <div style={card}>
-        {sectionHeader(
-          'Interactive Brokers — FlexQuery',
-          <Key size={20} color="#0ea5e9" />,
-          ibkrOpen,
-          setIbkrOpen
-        )}
-
-        {ibkrOpen && (
-          <>
-            <p style={{ margin: '0 0 20px', fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-              ה-IBKR FlexQuery מאפשר ליומן לייבא עסקאות אוטומטית מחשבון האינטראקטיב שלך כל לילה.
-              צריך להגדיר שני פרטים: <strong style={{ color: '#e2e8f0' }}>Flex Token</strong> ו-<strong style={{ color: '#e2e8f0' }}>Query ID</strong>.
-            </p>
-
-            <div style={{ borderTop: '1px solid rgba(71,85,105,0.3)', paddingTop: '20px', marginBottom: '20px' }}>
-              <div style={{ fontSize: '15px', fontWeight: 600, color: '#e2e8f0', marginBottom: '16px' }}>
-                שלב 1 — יצירת Flex Token (User Token)
-              </div>
-              <div style={stepRow}>
-                <div style={stepNum('#0369a1')}>1</div>
-                <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-                  היכנס ל-<strong style={{ color: '#e2e8f0' }}>Client Portal</strong> של Interactive Brokers
-                  <NavPath steps={['Settings', 'User Settings', 'Security', 'Token for Flex Web Service']} />
-                </div>
-              </div>
-              <div style={stepRow}>
-                <div style={stepNum('#0369a1')}>2</div>
-                <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-                  לחץ על <strong style={{ color: '#e2e8f0' }}>"Create"</strong> או <strong style={{ color: '#e2e8f0' }}>"View Token"</strong> אם כבר קיים.
-                  <br />שמור את הטוקן — הוא ייראה כך:
-                  <div style={codeBlock}>
-                    {'1234567890abcdef1234567890abcdef'}
-                  </div>
-                </div>
-              </div>
-              <div style={{ ...stepRow, marginBottom: 0 }}>
-                <div style={stepNum('#0369a1')}>3</div>
-                <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-                  זהו ה-<code style={{ color: '#7dd3fc', backgroundColor: 'rgba(14,165,233,0.1)', padding: '1px 6px', borderRadius: '4px' }}>IBKR_FLEX_TOKEN</code> שתכניס ל-GitHub Secrets (ראה שלב 3 למטה).
-                </div>
-              </div>
-            </div>
-
-            <div style={{ borderTop: '1px solid rgba(71,85,105,0.3)', paddingTop: '20px', marginBottom: '20px' }}>
-              <div style={{ fontSize: '15px', fontWeight: 600, color: '#e2e8f0', marginBottom: '16px' }}>
-                שלב 2 — יצירת Flex Query
-              </div>
-              <div style={stepRow}>
-                <div style={stepNum('#0369a1')}>1</div>
-                <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-                  ב-Client Portal, עבור אל:
-                  <NavPath steps={['Performance & Reports', 'Flex Queries']} />
-                  לחץ על <strong style={{ color: '#e2e8f0' }}>"New Activity Flex Query"</strong>.
-                </div>
-              </div>
-              <div style={stepRow}>
-                <div style={stepNum('#0369a1')}>2</div>
-                <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-                  תן שם לשאילתה (לדוגמה: <em style={{ color: '#e2e8f0' }}>Trading Journal Import</em>).
-                  <br />תחת <strong style={{ color: '#e2e8f0' }}>Trades</strong> — סמן <strong style={{ color: '#e2e8f0' }}>"Include Trades"</strong> ובחר את השדות הבאים:
-                  <div style={codeBlock}>
-                    {`AccountID  •  Symbol  •  Buy/Sell
-Date/Time  •  Quantity  •  TradePrice
-IBCommission  •  Open/Close  •  NetCash
-CurrencyPrimary  •  SecurityType`}
-                  </div>
-                </div>
-              </div>
-              <div style={stepRow}>
-                <div style={stepNum('#0369a1')}>3</div>
-                <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-                  תחת <strong style={{ color: '#e2e8f0' }}>Date Period</strong> — בחר <strong style={{ color: '#e2e8f0' }}>"Last Business Day"</strong>.
-                  <br />Format: <strong style={{ color: '#e2e8f0' }}>XML</strong>.
-                </div>
-              </div>
-              <div style={{ ...stepRow, marginBottom: 0 }}>
-                <div style={stepNum('#0369a1')}>4</div>
-                <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-                  שמור. חזור לרשימת ה-Flex Queries — ה-<strong style={{ color: '#e2e8f0' }}>Query ID</strong> יופיע בטבלה (מספר בן 8-9 ספרות).
-                  <br />זהו ה-<code style={{ color: '#7dd3fc', backgroundColor: 'rgba(14,165,233,0.1)', padding: '1px 6px', borderRadius: '4px' }}>IBKR_FLEX_QUERY_ID</code>.
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* ─── GitHub Secrets Section ─── */}
-      <div style={card}>
-        {sectionHeader(
-          'הגדרת GitHub Secrets',
-          <Terminal size={20} color="#a78bfa" />,
-          secretsOpen,
-          setSecretsOpen
-        )}
-
-        {secretsOpen && (
-          <>
-            <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-              כל המפתחות מאוחסנים ב-GitHub Secrets — הם לא נחשפים בקוד ומשמשים את ה-GitHub Actions.
-            </p>
-            <NavPath steps={['Repository', 'Settings', 'Secrets and variables', 'Actions', 'New repository secret']} />
-
-            <div style={secretBox}>
-              <div style={{ ...secretRow, color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <span>שם ה-Secret</span>
-                <span>מה להכניס</span>
-              </div>
-              <div style={{ height: '1px', backgroundColor: 'rgba(71,85,105,0.3)' }} />
-
-              {[
-                {
-                  key: 'IBKR_FLEX_TOKEN',
-                  desc: 'הטוקן מ-IBKR Client Portal → User Settings → Security',
-                  color: '#7dd3fc',
-                },
-                {
-                  key: 'IBKR_FLEX_QUERY_ID',
-                  desc: 'ה-ID של ה-Flex Query שיצרת (מספר בן 8-9 ספרות)',
-                  color: '#7dd3fc',
-                },
-                {
-                  key: 'SUPABASE_URL',
-                  desc: 'כתובת ה-Supabase project (מסופק ע"י המנהל)',
-                  color: '#86efac',
-                },
-                {
-                  key: 'SUPABASE_ANON_KEY',
-                  desc: 'מפתח ה-anon של Supabase (מסופק ע"י המנהל)',
-                  color: '#86efac',
-                },
-                {
-                  key: 'FINNHUB_API_KEY',
-                  desc: 'אופציונלי — מ-finnhub.io לעדכון מחירים אוטומטי',
-                  color: '#fbbf24',
-                },
-              ].map(({ key, desc, color }) => (
-                <div key={key} style={secretRow}>
-                  <code style={{
-                    color,
-                    backgroundColor: 'rgba(15,23,42,0.6)',
-                    padding: '4px 8px',
-                    borderRadius: '5px',
-                    fontSize: '12px',
-                    direction: 'ltr',
-                    display: 'inline-block',
-                  }}>
-                    {key}
-                  </code>
-                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>{desc}</span>
-                </div>
-              ))}
-            </div>
-
-            <div style={{
-              marginTop: '14px',
-              backgroundColor: 'rgba(14,165,233,0.05)',
-              border: '1px solid rgba(14,165,233,0.15)',
-              borderRadius: '8px',
-              padding: '12px 16px',
-              fontSize: '12px',
-              color: '#7dd3fc',
-              lineHeight: 1.6,
-            }}>
-              <strong>מתי פועל הייבוא האוטומטי?</strong> כל לילה בימים ב׳–ו׳ בשעה 08:00 (שעון ישראל), לאחר סגירת שוק ה-US.
-              ניתן גם להפעיל ייבוא ידני דרך <strong>Actions → IBKR Trade Import → Run workflow</strong>.
-            </div>
-          </>
-        )}
       </div>
 
       {/* ─── Finnhub Section ─── */}

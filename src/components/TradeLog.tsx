@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { AppData } from '../types/trade';
 import { formatCurrency, formatPercent, formatDate, getPLPercentOfPortfolio, getNetProfitLoss, getRiskUnits, isClosedTrade, getOpenShares } from '../utils/calculations';
-import { Trash2, Search, ChevronUp, ChevronDown, Eye, RefreshCw, CheckCircle, ClipboardList } from 'lucide-react';
+import { Trash2, Search, ChevronUp, ChevronDown, Eye, CheckCircle, ClipboardList } from 'lucide-react';
 
 interface TradeLogProps {
   data: AppData;
@@ -13,14 +13,6 @@ interface TradeLogProps {
 
 type SortField = 'date' | 'stockName' | 'totalProfitLoss' | 'totalProfitLossPercent' | 'rr' | 'avgEntryPrice' | 'totalShares';
 type SortDir = 'asc' | 'desc';
-
-function formatSyncTime(iso?: string): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const date = d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit' });
-  const time = d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
-  return `${date} · ${time}`;
-}
 
 export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: TradeLogProps) {
   const trades = data.trades;
@@ -108,25 +100,6 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
           >
             + עסקה חדשה
           </button>
-          <div
-            title="סנכרון אוטומטי מ-Interactive Brokers"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              backgroundColor: '#1e293b',
-              border: '1px solid rgba(71,85,105,0.5)',
-              borderRadius: '6px',
-              padding: '4px 10px',
-              fontSize: '11px',
-              color: data.ibkrLastSync ? '#64748b' : '#334155',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <RefreshCw size={10} style={{ color: data.ibkrLastSync ? '#38bdf8' : '#334155', flexShrink: 0 }} />
-            <span style={{ color: '#475569', fontWeight: 500 }}>IBKR</span>
-            <span>{data.ibkrLastSync ? formatSyncTime(data.ibkrLastSync) : 'טרם סונכרן'}</span>
-          </div>
         </div>
       </div>
 
@@ -303,7 +276,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                           <span style={{ fontSize: '10px', fontWeight: 600, color: '#d97706', backgroundColor: 'rgba(217,119,6,0.15)', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(217,119,6,0.3)' }}>פתוחה</span>
                         )}
                         {trade.ibkrImported && (
-                          <span style={{ fontSize: '10px', color: '#64748b' }}>IBKR</span>
+                          <span style={{ fontSize: '10px', color: '#64748b' }}>קולמקס</span>
                         )}
                       </span>
                     </td>

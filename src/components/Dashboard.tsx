@@ -473,7 +473,7 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                     >
                       <td style={{ padding: '10px 12px', color: '#f1f5f9', fontWeight: 700 }}>
                         {pos.stockName}
-                        {pos.ibkrImported && <span style={{ marginRight: '6px', fontSize: '10px', color: '#64748b' }}>IBKR</span>}
+                        {pos.ibkrImported && <span style={{ marginRight: '6px', fontSize: '10px', color: '#64748b' }}>קולמקס</span>}
                       </td>
                       <td style={{ padding: '10px 12px' }}>
                         <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, backgroundColor: pos.type === 'long' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: pos.type === 'long' ? '#22c55e' : '#ef4444' }}>
